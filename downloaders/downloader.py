@@ -65,6 +65,14 @@ class Downloader(object):
     def init(self) -> bool:
         return self._internal_init()
 
+    def __string_in_list(self, string: str, string_list: list) -> bool:
+        if not isinstance(string, str) or not isinstance(string_list, list):
+            return False
+        for current_str in string_list:
+            if current_str.lower() == string.lower():
+                return True
+        return False
+
     def download(self) -> list:
         if self._categories is None or len(self._categories) <= 0:
             self._categories = self._parse_categories()
@@ -72,16 +80,15 @@ class Downloader(object):
         books: list = []
         cat: Category = None
         for cat in self._categories:
-            if self._filtered_categories is None or len(self._filtered_categories) <= 0 or cat.description in self._filtered_categories:
+            if self._filtered_categories is None or len(self._filtered_categories) <= 0 or (self.__string_in_list(cat.description, self._filtered_categories)):
+                print(f'Parsing category {cat.description}...')
                 if cat.pages == 0:
                     cat.pages = self._count_pages(cat)
                 for page in range(1, cat.pages+1):
+                    print(f'\t-> page {page}')
                     parsed_books: list = self._parse_books(cat, page)
                     for book in parsed_books:
-                        self._browse_book(book)
-                        books.append(book)
-                    with ProcessPoolExecutor(max_workers=16) as executor:
-                        feature_of_books = {executor.submit(download_book, b, self._config) : b for b in parsed_books}
-                        for feature in as_completed(feature_of_books):
-                            book = feature_of_books[feature]
+                        if self._browse_book(book):
+                            print(f'\t\tBook({len(books)+1}) found: {book.title}')
+                            books.append(book)
         return books

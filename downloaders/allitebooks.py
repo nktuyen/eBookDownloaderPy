@@ -19,9 +19,17 @@ class AllITeBooksDownloader(Downloader):
             Category('web-development', 'http://www.allitebooks.org/web-development/', 'Web Development'),
             Category('programming', 'http://www.allitebooks.org/programming/', 'Programming'),
             Category('datebases', 'http://www.allitebooks.org/datebases/', 'Datebases'),
+            Category('graphics-design', 'http://www.allitebooks.org/graphics-design/', 'Graphics & Design'),
+            Category('operating-systems', 'http://www.allitebooks.org/operating-systems/', 'Operating Systems'),
             Category('networking-cloud-computing', 'http://www.allitebooks.org/networking-cloud-computing/', 'Networking & Cloud Computing'),
             Category('administration', 'http://www.allitebooks.org/administration/', 'Administration'),
             Category('computers-technology', 'http://www.allitebooks.org/computers-technology/', 'Computers & Technology'),
+            Category('certification', 'http://www.allitebooks.org/certification/', 'Certification'),
+            Category('enterprise', 'http://www.allitebooks.org/enterprise/', 'Enterprise'),
+            Category('game-programming', 'http://www.allitebooks.org/game-programming/', 'Game Programming'),
+            Category('hardware', 'http://www.allitebooks.org/hardware/', 'Hardware & DIY'),
+            Category('rketing-seo', 'http://www.allitebooks.org/marketing-seo/', 'Marketing & SEO'),
+            Category('security', 'http://www.allitebooks.org/security/', 'Security'),
             Category('software', 'http://www.allitebooks.org/software/', 'Software')
         ]
 
@@ -37,13 +45,13 @@ class AllITeBooksDownloader(Downloader):
         proxies: dict = req_config.get('proxies', None)
         
         try:
-            response = requests.get(url, proxies=proxies, verify=verify, timeout=3)
+            response = requests.get(url, proxies=proxies, verify=verify)
         except Exception as ex:
-            print(f'Exception: {ex}')
+            print(f'{__file__}[50]: Exception: {ex}')
             return 0
         
         if response.status_code != 200:
-            print(f'response.status_code: {response.status_code}')
+            print(f'{__file__}[54]: response.status_code: {response.status_code}')
             return 0
         
         parser: AdvancedHTMLParser = AdvancedHTMLParser()
@@ -52,14 +60,14 @@ class AllITeBooksDownloader(Downloader):
         except MultipleRootNodeException:
             pass
         except Exception as ex:
-            print(f'Exception: {ex}')
+            print(f'{__file__}[63]: Exception: {ex}')
             response.close()
             return  0
         
         response.close()
         body: AdvancedTag = parser.body
         if not isinstance(body, AdvancedTag):
-            print(f'Body is not AdvancedTag')
+            print(f'{__file__}[70]: Body is not AdvancedTag')
             parser.close()
             return 0
         
@@ -111,13 +119,13 @@ class AllITeBooksDownloader(Downloader):
         proxies: dict = req_config.get('proxies', None)
         
         try:
-            response = requests.get(url, proxies=proxies, verify=verify, timeout=3)
+            response = requests.get(url, proxies=proxies, verify=verify)
         except Exception as ex:
-            print(f'Exception: {ex}')
+            print(f'{__file__}[124]: Exception: {ex}')
             return []
         
         if response.status_code != 200:
-            print(f'response.status_code: {response.status_code}')
+            print(f'{__file__}[128]: response.status_code: {response.status_code}')
             return []
         
         parser: AdvancedHTMLParser = AdvancedHTMLParser()
@@ -126,14 +134,14 @@ class AllITeBooksDownloader(Downloader):
         except MultipleRootNodeException:
             pass
         except Exception as ex:
-            print(f'Exception: {ex}')
+            print(f'{__file__}[137]: Exception: {ex}')
             response.close()
             return  []
         
         response.close()
         body: AdvancedTag = parser.body
         if not isinstance(body, AdvancedTag):
-            print(f'Body is not AdvancedTag')
+            print(f'{__file__}[144]: Body is not AdvancedTag')
             parser.close()
             return []
         
@@ -229,13 +237,13 @@ class AllITeBooksDownloader(Downloader):
         proxies: dict = req_config.get('proxies', None)
         
         try:
-            response = requests.get(book.url, proxies=proxies, verify=verify, timeout=3)
+            response = requests.get(book.url, proxies=proxies, verify=verify)
         except Exception as ex:
-            print(f'Exception: {ex}')
+            print(f'{__file__}[242]: Exception: {ex}')
             return False
         
         if response.status_code != 200:
-            print(f'response.status_code: {response.status_code}')
+            print(f'{__file__}[246]: response.status_code: {response.status_code}')
             return False
         
         parser: AdvancedHTMLParser = AdvancedHTMLParser()
@@ -244,14 +252,14 @@ class AllITeBooksDownloader(Downloader):
         except MultipleRootNodeException:
             pass
         except Exception as ex:
-            print(f'Exception: {ex}')
+            print(f'{__file__}[255]: Exception: {ex}')
             response.close()
             return  False
         
         response.close()
         body: AdvancedTag = parser.body
         if not isinstance(body, AdvancedTag):
-            print(f'Body is not AdvancedTag')
+            print(f'{__file__}[262]: Body is not AdvancedTag')
             parser.close()
             return False
 
@@ -328,10 +336,10 @@ class AllITeBooksDownloader(Downloader):
                 if isinstance(h1, AdvancedTag) and h1.tagName.lower() == 'h1' and h1.className.lower() == 'single-title':
                     if isinstance(h1.innerText, str):
                         text = h1.innerText.strip(' \r\n\t')
-                        if book.title is None or len(book.title) <= 0:
-                            book.title = html2text(unquote(text))
+                        if len(text) > 0:
+                            if book.title is None or len(book.title) <= 0:
+                                book.title = html2text(unquote(text))
                             result = True
-                
                 try:
                     tag_list = entry_header.getElementsByXPath("//div[@class='entry-meta clearfix']")
                 except Exception as ex:
@@ -371,18 +379,22 @@ class AllITeBooksDownloader(Downloader):
                                 if key == 'author:':
                                     authors: list = text.split(',')
                                     book.authors = authors
+                                    result = True
                                 elif key == 'isbn-10:':
                                     book.isbn = text
+                                    result = True
                                 elif key == 'year:':
                                     if text.isnumeric():
                                         book.published = int(text)
+                                        result = True
                                 elif key == 'pages:':
                                     if text.isnumeric():
                                         book.pages = int(text)
+                                        result = True
                                 elif key == 'category:':
                                     categories: list = text.split(',')
                                     book.categories = categories
-
+                                    result = True
             if isinstance(entry_content, AdvancedTag):
                 pass
 
@@ -405,18 +417,20 @@ class AllITeBooksDownloader(Downloader):
                             link: str = anchor.getAttribute('href')
                             if isinstance(link, str) and len(link) > 0:
                                 link = link.strip(' \r\n\t')
-                            text = anchor.innerText
-                            if isinstance(text, str) and len(text) > 0:
-                                text = text.strip(' \r\n\t')
-                                formats: list = text.split(' ')
-                                format: str = ''
-                                if len(formats) > 0:
-                                    format = formats[-1:][0]
-                                else:
-                                    format = text
-                                if len(format) > 0:
-                                    if not isinstance(book.media, dict):
-                                        book.media = dict()
-                                    book.media[format] = link
+                            if len(link) > 0:
+                                text = anchor.innerText
+                                if isinstance(text, str) and len(text) > 0:
+                                    text = text.strip(' \r\n\t')
+                                    formats: list = text.split(' ')
+                                    format: str = ''
+                                    if len(formats) > 0:
+                                        format = formats[-1:][0]
+                                    else:
+                                        format = text
+                                    if len(format) > 0:
+                                        if not isinstance(book.media, dict):
+                                            book.media = dict()
+                                        book.media[format] = link
+                                        result = True
             #
         return result
