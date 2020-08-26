@@ -1,13 +1,14 @@
 {
     "requests": {
         "proxies": null,
-        "verify": true
+        "verify": true,
+		"timeout": null
     },
     "download": {
         "media": true,
         "image": true,
         "overwritten": false,
-        "directory": "D:\\Documents\\IT",
+        "directory": "books",
         "group": true
     }
 }

@@ -6,11 +6,14 @@ import sys
 import os
 import json
 import optparse
+from urllib.parse import quote
+import slug
 
 if __name__ == "__main__":
     parser = optparse.OptionParser('%prog store [options]')
     parser.add_option('--config', default=None, help='Configuration file in JSON format')
-    parser.add_option('--categories', default=None, help='Categories list seperated by comma')
+    parser.add_option('--categories', default=None, help='Categories list seperated by comma. This cannot be combined with --search option')
+    parser.add_option('--keyword', default=None, help='Search keyword. This cannot be combined with --categories option')
     options, arguments = parser.parse_args()
 
     if arguments is None or len(arguments) <= 0:
@@ -67,14 +70,21 @@ if __name__ == "__main__":
             if len(cat.strip()) > 0:
                 categories.append(cat.strip())
 
+    keyword: str = None
+    if options.keyword is not None:
+        keyword = options.keyword
+    if keyword is not None and len(keyword) <= 0:
+        print(f'Keyword cannot be empty')
+        sys.exit(5)
+
     downloader: Downloader = None
     books: list = []
     for store in specified_stores:
         if isinstance(store, AllITeBooksStore):
-            downloader = AllITeBooksDownloader(store, config, categories)
+            if keyword is not None and len(keyword) > 0:
+                downloader = AllITeBooksDownloader(store=store, config=config, keyword=keyword)
+            else:
+                downloader = AllITeBooksDownloader(store=store, config=config, categories=categories)
         else:
             continue
         books += downloader.download()
-    
-    with open('books.json', 'w') as json_file:
-        json.dump(books, json_file, indent=4)

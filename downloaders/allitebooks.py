@@ -7,45 +7,50 @@ from urllib.parse import quote, unquote
 from html2text import html2text
 from html import escape, unescape
 import requests
+import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
 class AllITeBooksDownloader(Downloader):
-    def __init__(self, store: AllITeBooksStore, config: dict = None, categories: list = None):
-        super().__init__(store=store, config=config, categories=categories)
+    def __init__(self, store: AllITeBooksStore, config: dict = None, categories: list = None, keyword: str = None):
+        super().__init__(store=store, config=config, categories=categories, keyword=keyword)
 
     def _parse_categories(self):
+        if self._search_keyword is not None and len(self._search_keyword) > 0:
+            return [Category(self._search_keyword.lower(), f'?s={quote(self._search_keyword)}', self._search_keyword)]
+        
         return [
-            Category('web-development', 'http://www.allitebooks.org/web-development/', 'Web Development'),
-            Category('programming', 'http://www.allitebooks.org/programming/', 'Programming'),
-            Category('datebases', 'http://www.allitebooks.org/datebases/', 'Datebases'),
-            Category('graphics-design', 'http://www.allitebooks.org/graphics-design/', 'Graphics & Design'),
-            Category('operating-systems', 'http://www.allitebooks.org/operating-systems/', 'Operating Systems'),
-            Category('networking-cloud-computing', 'http://www.allitebooks.org/networking-cloud-computing/', 'Networking & Cloud Computing'),
-            Category('administration', 'http://www.allitebooks.org/administration/', 'Administration'),
-            Category('computers-technology', 'http://www.allitebooks.org/computers-technology/', 'Computers & Technology'),
-            Category('certification', 'http://www.allitebooks.org/certification/', 'Certification'),
-            Category('enterprise', 'http://www.allitebooks.org/enterprise/', 'Enterprise'),
-            Category('game-programming', 'http://www.allitebooks.org/game-programming/', 'Game Programming'),
-            Category('hardware', 'http://www.allitebooks.org/hardware/', 'Hardware & DIY'),
-            Category('rketing-seo', 'http://www.allitebooks.org/marketing-seo/', 'Marketing & SEO'),
-            Category('security', 'http://www.allitebooks.org/security/', 'Security'),
-            Category('software', 'http://www.allitebooks.org/software/', 'Software')
+            Category('web-development', 'web-development', 'Web Development'),
+            Category('programming', 'programming', 'Programming'),
+            Category('datebases', 'datebases', 'Datebases'),
+            Category('graphics-design', 'graphics-design', 'Graphics & Design'),
+            Category('operating-systems', 'operating-systems', 'Operating Systems'),
+            Category('networking-cloud-computing', 'networking-cloud-computing', 'Networking & Cloud Computing'),
+            Category('administration', 'administration', 'Administration'),
+            Category('computers-technology', 'computers-technology', 'Computers & Technology'),
+            Category('certification', 'certification', 'Certification'),
+            Category('enterprise', 'enterprise', 'Enterprise'),
+            Category('game-programming', 'game-programming', 'Game Programming'),
+            Category('hardware', 'hardware', 'Hardware & DIY'),
+            Category('rketing-seo', 'marketing-seo', 'Marketing & SEO'),
+            Category('security', 'security', 'Security'),
+            Category('software', 'software', 'Software')
         ]
 
     def _count_pages(self, cat: Category) -> int:
         if not isinstance(cat, Category):
             return 0
         response: requests.Response = None
-        url: str = cat.url
+        url: str = os.path.join(self._store.home, cat.url).replace(os.sep, '/')
         req_config: dict = None
         if isinstance(self._config, dict):
             req_config = self._config.get('requests', {})
         verify: bool = req_config.get('verify', True)
         proxies: dict = req_config.get('proxies', None)
+        timeout: int = req_config.get('timeout', None)
         
         try:
-            response = requests.get(url, proxies=proxies, verify=verify)
+            response = requests.get(url, proxies=proxies, verify=verify, timeout=timeout)
         except Exception as ex:
             print(f'{__file__}[50]: Exception: {ex}')
             return 0
@@ -111,17 +116,23 @@ class AllITeBooksDownloader(Downloader):
             return []
         
         response: requests.Response = None
-        url: str = f'{cat.url}/page/{page}'
+        url: str = ''
+        if self._search_keyword is not None:
+            url = f'{self._store.home}/{os.path.join("page", str(page), cat.url).replace(os.sep, "/")}'
+        else:
+            url = f'{self._store.home}/{os.path.join(cat.url, "page", str(page)).replace(os.sep, "/")}'
+        
         req_config: dict = None
         if isinstance(self._config, dict):
             req_config = self._config.get('requests', {})
         verify: bool = req_config.get('verify', True)
         proxies: dict = req_config.get('proxies', None)
+        timeout: int = req_config.get('timeout', None)
         
         try:
-            response = requests.get(url, proxies=proxies, verify=verify)
+            response = requests.get(url, proxies=proxies, verify=verify, timeout=timeout)
         except Exception as ex:
-            print(f'{__file__}[124]: Exception: {ex}')
+            print(f'{__file__}[137]: Exception: {ex}')
             return []
         
         if response.status_code != 200:
@@ -168,6 +179,8 @@ class AllITeBooksDownloader(Downloader):
         anchor: AdvancedTag = None
         image: AdvancedTag = None
         summary: AdvancedTag = None
+        header: AdvancedTag = None
+        h2: AdvancedTag = None
         text: str = ''
         book: Book = None
         for child in container.childNodes:
@@ -204,11 +217,24 @@ class AllITeBooksDownloader(Downloader):
                             text = image.getAttribute('src')
                             if isinstance(text, str):
                                 book.image = text.strip(' \r\n\t')
-                            text = image.getAttribute('alt')
-                            if isinstance(text, str):
-                                book.title = html2text(unquote(text)).strip(' \r\n\t')
             if book is not None:                        
                 if isinstance(book_body, AdvancedTag):
+                    header = book_body.firstElementChild
+                    if isinstance(header, AdvancedTag) and header.tagName.lower() == 'header' and header.className.lower() == 'entry-header':
+                        if header.hasChildNodes():
+                            h2 = header.firstElementChild
+                            if isinstance(h2, AdvancedTag):
+                                if h2.hasChildNodes():
+                                    anchor = h2.firstElementChild
+                                    if isinstance(anchor, AdvancedTag):
+                                        text = anchor.innerText
+                                else:
+                                    text = h2.innerText
+                        else:
+                            text = header.innerText
+                        if isinstance(text, str):
+                            book.title = html2text(unquote(text)).strip(' \r\n\t')
+                    
                     summary = book_body.lastElementChild
                     if isinstance(summary, AdvancedTag) and summary.tagName.lower() == 'div' and summary.className.lower() == 'entry-summary':
                         if summary.hasChildNodes():
@@ -235,9 +261,10 @@ class AllITeBooksDownloader(Downloader):
             req_config = self._config.get('requests', {})
         verify: bool = req_config.get('verify', True)
         proxies: dict = req_config.get('proxies', None)
+        timeout: int = req_config.get('timeout', None)
         
         try:
-            response = requests.get(book.url, proxies=proxies, verify=verify)
+            response = requests.get(book.url, proxies=proxies, verify=verify, timeout=timeout)
         except Exception as ex:
             print(f'{__file__}[242]: Exception: {ex}')
             return False
@@ -381,7 +408,12 @@ class AllITeBooksDownloader(Downloader):
                                     book.authors = authors
                                     result = True
                                 elif key == 'isbn-10:':
-                                    book.isbn = text
+                                    isbn_list: list = text.split(',')
+                                    isbn: str = isbn_list[0].strip(' \r\n\t').replace('-', '')
+                                    if len(isbn) == 13:
+                                        book.isbn13 = isbn
+                                    else:
+                                        book.isbn = isbn
                                     result = True
                                 elif key == 'year:':
                                     if text.isnumeric():
@@ -428,9 +460,9 @@ class AllITeBooksDownloader(Downloader):
                                     else:
                                         format = text
                                     if len(format) > 0:
-                                        if not isinstance(book.media, dict):
-                                            book.media = dict()
-                                        book.media[format] = link
+                                        if not isinstance(book.links, dict):
+                                            book.links = dict()
+                                        book.links[format] = link
                                         result = True
             #
         return result

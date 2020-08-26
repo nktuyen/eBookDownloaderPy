@@ -1,3 +1,5 @@
+import json
+
 class Book(object):
     @property
     def url(self) -> str:
@@ -26,14 +28,14 @@ class Book(object):
         self._image = val
 
     @property
-    def media(self) -> dict:
-        if not isinstance(self._media, dict):
+    def links(self) -> dict:
+        if not isinstance(self._links, dict):
             return None
-        return self._media
+        return self._links
 
-    @media.setter
-    def media(self, val: dict):
-        self._media = val
+    @links.setter
+    def links(self, val: dict):
+        self._links = val
 
     @property
     def isbn(self) -> str:
@@ -44,6 +46,16 @@ class Book(object):
     @isbn.setter
     def isbn(self, val: str):
         self._isbn10 = val
+    
+    @property
+    def isbn13(self) -> str:
+        if not isinstance(self._isbn13, str):
+            return ''
+        return self._isbn13
+    
+    @isbn13.setter
+    def isbn13(self, val: str):
+        self._isbn13 = val
     
     @property
     def brief(self) -> str:
@@ -115,9 +127,10 @@ class Book(object):
         self._url = url
         self._title = title
         self._isbn10 = ''
+        self._isbn13 = ''
         self._brief = ''
         self._image = ''
-        self._media = ''
+        self._links = ''
         self._authors = None
         self._publisher = None
         self._published_year = 0
@@ -126,4 +139,7 @@ class Book(object):
         self._path = ''
     
     def __str__(self):
-        return f'{{"isbn-10": "{self._isbn10}", "title": "{self._title}", "url": "{self._url}", "pages": {self._pages}, "published": {self._published_year}, "media": {self._media}, "path":"{self._path}"}}'
+        return f'{{"isbn-10": "{self._isbn10}", "isbn-13": "{self._isbn13}", "title": "{self._title}", "url": "{self._url}", "pages": {self._pages}, "published": {self._published_year}, "links": {self._links}, "path":"{self._path}"}}'
+
+    def to_json(self):
+        return {"isbn-10": self._isbn10, "isbn-13": self._isbn13, "title": self._title, "url": self._url, "pages": self._pages, "published": self._published_year, "links": self._links, "path": self._path}

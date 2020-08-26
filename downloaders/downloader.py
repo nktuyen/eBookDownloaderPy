@@ -3,13 +3,15 @@ from models.category import Category
 from models.book import Book
 
 import os
+import json
+import slug
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 def download_book(book: Book, config: dict) -> bool:
     if not isinstance(book, Book):
         return False
     
-    if not isinstance(book.media, dict) or len(book.media) <= 0:
+    if not isinstance(book.links, dict) or len(book.links) <= 0:
         return False
 
     download_config: dict = config.get('download')
@@ -17,13 +19,12 @@ def download_book(book: Book, config: dict) -> bool:
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
-    for format in book.media.keys():
-        link: str = book.media[format]
-        link = link.replace('/', os.sep)
-        path, name = os.path.split(link)
-        book.path = os.path.join(output_dir, name)
-    
-    print(book)
+    try:
+        with open(os.path.join(output_dir, f'{slug.slug(book.title)}.json'), 'w') as json_file:
+            json.dump(book.to_json(), json_file, indent=4, sort_keys=True)
+    except Exception as ex:
+        print(f'{__file__}[26]: Exception: {ex}')
+        pass
     
     return True
 
@@ -41,11 +42,16 @@ class Downloader(object):
     def categories(self) -> list:
         return self._categories
     
-    def __init__(self, store: Store, config: dict = None, categories: list = None):
+    def __init__(self, store: Store, config: dict = None, categories: list = None, keyword: str = None):
         self._store = store
         self._config = config
         self._categories = None
-        self._filtered_categories = categories
+        if keyword is None:
+            self._filtered_categories = categories
+            self._search_keyword = None
+        else:
+            self._search_keyword = keyword
+            self._filtered_categories = None
 
     def _internal_init(self) -> bool:
         return True
@@ -81,14 +87,20 @@ class Downloader(object):
         cat: Category = None
         for cat in self._categories:
             if self._filtered_categories is None or len(self._filtered_categories) <= 0 or (self.__string_in_list(cat.description, self._filtered_categories)):
-                print(f'Parsing category {cat.description}...')
+                print(f'Category: {cat.description}')
                 if cat.pages == 0:
                     cat.pages = self._count_pages(cat)
                 for page in range(1, cat.pages+1):
-                    print(f'\t-> page {page}')
+                    print(f'  -> Page: {page}')
                     parsed_books: list = self._parse_books(cat, page)
                     for book in parsed_books:
                         if self._browse_book(book):
-                            print(f'\t\tBook({len(books)+1}) found: {book.title}')
-                            books.append(book)
+                            print(f'\t\tBook: {book.title}')
+                    with ProcessPoolExecutor() as executor:
+                        features_to_books = {executor.submit(download_book, book, self._config) : book for book in parsed_books}
+                        for feature in as_completed(features_to_books):
+                            if feature.result():
+                                book: Book = features_to_books[feature]
+                                if isinstance(book, Book):
+                                    books.append(book)
         return books
