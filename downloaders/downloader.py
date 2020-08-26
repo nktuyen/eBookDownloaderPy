@@ -76,11 +76,11 @@ def download_book(book: Book, config: dict, outdir: str) -> bool:
                 book.links[format] = download_file(link, output_dir, requests_config, download_config.get('overwritten', False))
                 result = True
     
-    try:
-        with open(f'{slug.slug(book.title)}.json', 'w') as json_file:
-            json.dump(book.to_json(), json_file, indent=4, sort_keys=True)
-    except Exception as ex:
-        pass
+    #try:
+        #with open(f'{slug.slug(book.title)}.json', 'w') as json_file:
+            #json.dump(book.to_json(), json_file, indent=4, sort_keys=True)
+    #except Exception as ex:
+        #pass
     
     return result
 
@@ -156,7 +156,7 @@ class Downloader(object):
                     for book in parsed_books:
                         if self._browse_book(book):
                             print(f'\t\tBook: {book.title}')
-                    with ProcessPoolExecutor() as executor:
+                    with ProcessPoolExecutor(max_workers=32) as executor:
                         features_to_books = {executor.submit(download_book, book, self._config, self._outdir) : book for book in parsed_books}
                         for feature in as_completed(features_to_books):
                             if feature.result():
