@@ -8,7 +8,7 @@ import json
 import optparse
 
 if __name__ == "__main__":
-    parser = optparse.OptionParser('%prog Name_or_Index_of_Store [--config=Configuration File] [--categories=Categories list seperated by comma]')
+    parser = optparse.OptionParser('%prog store [options]')
     parser.add_option('--config', default=None, help='Configuration file in JSON format')
     parser.add_option('--categories', default=None, help='Categories list seperated by comma')
     options, arguments = parser.parse_args()
@@ -23,8 +23,7 @@ if __name__ == "__main__":
     store = AllITeBooksStore()
     stores_d[store.name] = store
     stores_l.append(store)
-
-
+    
     specified_stores: list = []
 
     for arg in arguments:
