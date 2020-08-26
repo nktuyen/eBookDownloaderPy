@@ -19,7 +19,7 @@ def download_file(url: str, outdir: str, req_config: dict, overwritten: bool = F
     dir_name, file_name = os.path.split(full_path)
     file_path: str = os.path.join(outdir, file_name)
 
-    if os.path.exists(file_path) and not overwritten:
+    if os.path.exists(file_path) and (os.path.getsize(file_path) > 0) and not overwritten:
         return file_path
 
     verify: bool = req_config.get('verify', True)
@@ -47,7 +47,7 @@ def download_file(url: str, outdir: str, req_config: dict, overwritten: bool = F
     response.close()
     return file_path
 
-def download_book(book: Book, config: dict) -> bool:
+def download_book(book: Book, config: dict, outdir: str) -> bool:
     if not isinstance(book, Book):
         return False
     
@@ -56,7 +56,9 @@ def download_book(book: Book, config: dict) -> bool:
 
     download_config: dict = config.get('download', {})
     requests_config: dict = config.get('requests', {})
-    output_dir: str = download_config.get('directory', '')
+    output_dir: str = outdir
+    if not isinstance(outdir, str):
+        output_dir = '.'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
@@ -75,10 +77,9 @@ def download_book(book: Book, config: dict) -> bool:
                 result = True
     
     try:
-        with open(os.path.join(output_dir, f'{slug.slug(book.title)}.json'), 'w') as json_file:
+        with open(f'{slug.slug(book.title)}.json', 'w') as json_file:
             json.dump(book.to_json(), json_file, indent=4, sort_keys=True)
     except Exception as ex:
-        print(f'{__file__}[26]: Exception: {ex}')
         pass
     
     return result
@@ -97,7 +98,7 @@ class Downloader(object):
     def categories(self) -> list:
         return self._categories
     
-    def __init__(self, store: Store, config: dict = None, categories: list = None, keyword: str = None):
+    def __init__(self, store: Store, config: dict = None, categories: list = None, keyword: str = None, outdir: str = None):
         self._store = store
         self._config = config
         self._categories = None
@@ -107,6 +108,10 @@ class Downloader(object):
         else:
             self._search_keyword = keyword
             self._filtered_categories = None
+        if not isinstance(outdir, str):
+            self._outdir = '.'
+        else:
+            self._outdir = outdir
 
     def _internal_init(self) -> bool:
         return True
@@ -152,7 +157,7 @@ class Downloader(object):
                         if self._browse_book(book):
                             print(f'\t\tBook: {book.title}')
                     with ProcessPoolExecutor() as executor:
-                        features_to_books = {executor.submit(download_book, book, self._config) : book for book in parsed_books}
+                        features_to_books = {executor.submit(download_book, book, self._config, self._outdir) : book for book in parsed_books}
                         for feature in as_completed(features_to_books):
                             if feature.result():
                                 book: Book = features_to_books[feature]

@@ -6,9 +6,8 @@
     },
     "download": {
         "media": true,
-        "image": true,
+        "image": false,
         "overwritten": false,
-        "directory": "books",
         "group": true
     }
 }

@@ -12,8 +12,8 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
 class AllITeBooksDownloader(Downloader):
-    def __init__(self, store: AllITeBooksStore, config: dict = None, categories: list = None, keyword: str = None):
-        super().__init__(store=store, config=config, categories=categories, keyword=keyword)
+    def __init__(self, store: AllITeBooksStore, config: dict = None, categories: list = None, keyword: str = None, outdir: str = None):
+        super().__init__(store=store, config=config, categories=categories, keyword=keyword, outdir=outdir)
 
     def _parse_categories(self):
         if self._search_keyword is not None and len(self._search_keyword) > 0:

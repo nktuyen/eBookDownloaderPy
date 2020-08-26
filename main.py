@@ -14,6 +14,7 @@ if __name__ == "__main__":
     parser.add_option('--config', default=None, help='Configuration file in JSON format')
     parser.add_option('--categories', default=None, help='Categories list seperated by comma. This cannot be combined with --search option')
     parser.add_option('--keyword', default=None, help='Search keyword. This cannot be combined with --categories option')
+    parser.add_option('--outdir', default='.', help='Output directory path. Default is current directory')
     options, arguments = parser.parse_args()
 
     if arguments is None or len(arguments) <= 0:
@@ -77,14 +78,20 @@ if __name__ == "__main__":
         print(f'Keyword cannot be empty')
         sys.exit(5)
 
+    outdir: str = None
+    if options.outdir is not None:
+        outdir = options.outdir
+    else:
+        outdir = '.'
+
     downloader: Downloader = None
     books: list = []
     for store in specified_stores:
         if isinstance(store, AllITeBooksStore):
             if keyword is not None and len(keyword) > 0:
-                downloader = AllITeBooksDownloader(store=store, config=config, keyword=keyword)
+                downloader = AllITeBooksDownloader(store=store, config=config, keyword=keyword, outdir=outdir)
             else:
-                downloader = AllITeBooksDownloader(store=store, config=config, categories=categories)
+                downloader = AllITeBooksDownloader(store=store, config=config, categories=categories, outdir=outdir)
         else:
             continue
         books += downloader.download()

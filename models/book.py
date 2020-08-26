@@ -113,16 +113,6 @@ class Book(object):
     def categories(self, val: list):
         self._categories = val
 
-    @property
-    def path(self) -> str:
-        if not isinstance(self._path, str):
-            return ''
-        return self._path
-
-    @path.setter
-    def path(self, val: str):
-        self._path = val
-
     def __init__(self, url: str, title: str = ''):
         self._url = url
         self._title = title
@@ -136,10 +126,9 @@ class Book(object):
         self._published_year = 0
         self._pages = 0
         self._categories = None
-        self._path = None
     
     def __str__(self):
-        return f'{{"isbn-10": "{self._isbn10}", "isbn-13": "{self._isbn13}", "title": "{self._title}", "url": "{self._url}", "pages": {self._pages}, "published": {self._published_year}, "links": {self._links}, "path":"{self._path}"}}'
+        return f'{{"isbn-10": "{self._isbn10}", "isbn-13": "{self._isbn13}", "title": "{self._title}", "url": "{self._url}", "pages": {self._pages}, "published": {self._published_year}, "links": {self._links}}}'
 
     def to_json(self):
-        return {"isbn-10": self._isbn10, "isbn-13": self._isbn13, "title": self._title, "url": self._url, "pages": self._pages, "published": self._published_year, "image": self._image, "links": self._links, "path": self._path, "brief": self._brief}
+        return {"isbn-10": self._isbn10, "isbn-13": self._isbn13, "title": self._title, "url": self._url, "pages": self._pages, "published": self._published_year, "image": self._image, "links": self._links, "brief": self._brief}
