@@ -1,10 +1,6 @@
 {
     "requests": {
-        "proxies": {
-            "http": "http://tuyennk3:Fsoft042020@hl-proxyb:8080",
-            "https": "https://tuyennk3:Fsoft042020@hl-proxyb:8080",
-            "ftp": "fpt://tuyennk3:Fsoft042020@hl-proxyb:8080"
-        },
+        "proxies": null,
         "verify": true
     },
     "download": {
