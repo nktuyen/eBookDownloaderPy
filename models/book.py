@@ -126,20 +126,20 @@ class Book(object):
     def __init__(self, url: str, title: str = ''):
         self._url = url
         self._title = title
-        self._isbn10 = ''
-        self._isbn13 = ''
-        self._brief = ''
-        self._image = ''
-        self._links = ''
+        self._isbn10 = None
+        self._isbn13 = None
+        self._brief = None
+        self._image = None
+        self._links = None
         self._authors = None
         self._publisher = None
         self._published_year = 0
         self._pages = 0
         self._categories = None
-        self._path = ''
+        self._path = None
     
     def __str__(self):
         return f'{{"isbn-10": "{self._isbn10}", "isbn-13": "{self._isbn13}", "title": "{self._title}", "url": "{self._url}", "pages": {self._pages}, "published": {self._published_year}, "links": {self._links}, "path":"{self._path}"}}'
 
     def to_json(self):
-        return {"isbn-10": self._isbn10, "isbn-13": self._isbn13, "title": self._title, "url": self._url, "pages": self._pages, "published": self._published_year, "links": self._links, "path": self._path}
+        return {"isbn-10": self._isbn10, "isbn-13": self._isbn13, "title": self._title, "url": self._url, "pages": self._pages, "published": self._published_year, "image": self._image, "links": self._links, "path": self._path, "brief": self._brief}
